@@ -37,7 +37,7 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/api/mix", async (req, res) => {
-  const { audio1, audio2 } = req.body;
+  const { audio1, audio2, volume1 = 1.0, volume2 = 1.0 } = req.body;
 
   if (!audio1 || !audio2) {
     return res
@@ -59,7 +59,7 @@ app.post("/api/mix", async (req, res) => {
     ]);
 
     // 2. Mix files
-    await mixAudio(tempFile1, tempFile2, outputFile);
+    await mixAudio(tempFile1, tempFile2, outputFile, volume1, volume2);
 
     // 3. Cleanup temp files
     cleanup([tempFile1, tempFile2]);
@@ -107,15 +107,28 @@ async function downloadFile(url, dest) {
   });
 }
 
-function mixAudio(input1, input2, output) {
+function mixAudio(input1, input2, output, vol1, vol2) {
   return new Promise((resolve, reject) => {
     ffmpeg()
       .input(input1)
       .input(input2)
       .complexFilter([
         {
+          filter: "volume",
+          options: { volume: vol1 },
+          inputs: "0:a",
+          outputs: "a1",
+        },
+        {
+          filter: "volume",
+          options: { volume: vol2 },
+          inputs: "1:a",
+          outputs: "a2",
+        },
+        {
           filter: "amix",
           options: { inputs: 2, duration: "shortest" },
+          inputs: ["a1", "a2"],
         },
       ])
       .on("end", () => {
