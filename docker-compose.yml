@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  audio-mixer:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api/output:/app/api/output
